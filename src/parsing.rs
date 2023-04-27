@@ -1,36 +1,26 @@
-use std::collections::HashMap;
-use crate::token::TokenType::{NumericLiteral, OperatorLiteral};
 use crate::token::Token;
+use crate::token::TokenType::{IntLiteral, FloatLiteral, OperatorLiteral};
 
 pub fn parser(lexed: Vec<Token>) -> Vec<Token> {
     let mut i = 0;
-
-    let operator_prec: HashMap<&str, u32> = HashMap::from([
-        ("+", 3),
-        ("-", 3),
-        ("*", 4),
-        ("/", 4),
-        ("%", 4),
-        ("^", 4)
-    ]);
-
     let mut operator: Vec<Token> = Vec::new();
     let mut output: Vec<Token> = Vec::new();
 
     while i < lexed.len() {
-        if lexed[i].ttype == NumericLiteral {
-            output.push(lexed[i].clone())
-        }
+        match lexed[i].ttype {
+            IntLiteral => output.push(lexed[i].clone()),
+            FloatLiteral => output.push(lexed[i].clone()),
+            OperatorLiteral => {
+                while operator.len() > 0
+                    && get_prec(operator.last().unwrap()) >= get_prec(&lexed[i].clone())
+                    && !is_left_parr(operator.last().unwrap())
+                {
+                    output.push(operator.pop().unwrap());
+                }
 
-        if lexed[i].ttype == OperatorLiteral {
-            while operator.len() > 0 &&
-                operator_prec[operator.last().unwrap().value.as_str()]
-                    >= operator_prec[&*lexed[i].value.as_str()] {
-
-                output.push(operator.pop().unwrap());
+                operator.push(lexed[i].clone());
             }
-
-            operator.push(lexed[i].clone());
+            _ => break
         }
 
         i += 1;
@@ -41,4 +31,20 @@ pub fn parser(lexed: Vec<Token>) -> Vec<Token> {
     }
 
     return output;
+}
+
+pub fn is_left_parr(token: &Token) -> bool {
+    return token.value.as_str() == "(";
+}
+
+pub fn get_prec(token: &Token) -> u32 {
+    return match token.value.as_str() {
+        "+" => 3,
+        "-" => 3,
+        "*" => 4,
+        "/" => 4,
+        "^" => 4,
+        "%" => 4,
+        _ => unreachable!(),
+    };
 }

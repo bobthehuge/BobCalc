@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use crate::token::Token;
-use crate::token::TokenType::{NumericLiteral, OperatorLiteral};
+use crate::token::TokenType::{IntLiteral, OperatorLiteral};
 
 pub fn calculator(tokens: Vec<Token>) -> f32{
 
@@ -17,7 +17,7 @@ pub fn calculator(tokens: Vec<Token>) -> f32{
     ]);
 
     while i < tokens.len() {
-        if tokens[i].ttype == NumericLiteral {
+        if tokens[i].is_value_literal() {
             output.push(tokens[i].clone())
         }
 
@@ -32,13 +32,16 @@ pub fn calculator(tokens: Vec<Token>) -> f32{
 
             let value = operator(&tokens[i].value, args).unwrap();
 
-            output.push(Token{ttype: NumericLiteral, value: value.to_string()})
+            output.push(Token{ttype: IntLiteral, value: value.to_string()})
         }
 
         i += 1;
     }
 
-    return output.pop().unwrap().value.parse().unwrap();
+    match output.pop() {
+        None => 0.0,
+        e => e.unwrap().value.parse::<f32>().unwrap()
+    }
 }
 
 fn operator(func: &str, args: Vec<f32>) -> Result<f32, String> {
@@ -49,7 +52,6 @@ fn operator(func: &str, args: Vec<f32>) -> Result<f32, String> {
         "/" => Ok(args[1] / args[0]),
         "^" => Ok(args[1].powi(args[0] as i32)),
         "%" => Ok(args[1] % args[0]),
-
         _ => Err(format!("unexpected operator '{func}'"))
     }
 }
